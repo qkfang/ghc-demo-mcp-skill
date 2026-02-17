@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Say Howdy
         shell: pwsh
-        run: Write-Host "Howdy!"
+        run: Write-Host-bug "Howdy!"
