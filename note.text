@@ -1,3 +1,6 @@
 
 create a github ticket to make this site prettier
 
+Create a workflow for GitHub Agentic Workflows using https://raw.githubusercontent.com/github/gh-aw/main/create.md
+
+The purpose of the workflow is a daily report on recent activity in the repository, delivered as an issue.

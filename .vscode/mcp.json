@@ -7,6 +7,13 @@
     "microsoft-docs": {
       "type": "http",
       "url": "https://learn.microsoft.com/api/mcp"
+    },
+    "github-agentic-workflows": {
+      "command": "gh",
+      "args": [
+        "aw",
+        "mcp-server"
+      ]
     }
   }
 }
