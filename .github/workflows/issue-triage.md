@@ -30,7 +30,7 @@ timeout-minutes: 10
 source: githubnext/agentics/workflows/issue-triage.md@11c9a2c442e519ff2b427bf58679f5a525353f76
 ---
 
-# Agentic Triage — ghc-demo-mcp-skill
+# Agentic Issue Triage
 
 <!-- Adapted from githubnext/agentics issue-triage for the ghc-demo-mcp-skill project -->
 
