@@ -18,6 +18,15 @@ https://github.com/qkfang/ghc-demo-mcp-skill/
 Show how the daily-activity-report agent looks like in github
 https://github.com/qkfang/ghc-demo-mcp-skill/actions/workflows/daily-activity-report.lock.yml
 
+## Setup
+
+```
+gh extension install github/gh-aw
+gh extension upgrade aw
+
+curl -sL https://raw.githubusercontent.com/github/gh-aw/main/install-gh-aw.sh | bash
+gh auth login
+```
 
 ## Demo 2
 Now lets create above AW 
@@ -38,13 +47,6 @@ https://github.github.com/gh-aw/guides/packaging-imports/
 ```
 
 # Reference
-
-gh extension install github/gh-aw
-gh extension upgrade aw
-
-curl -sL https://raw.githubusercontent.com/github/gh-aw/main/install-gh-aw.sh | bash
-gh auth login
-
 
 gh aw add-wizard githubnext/agentics/daily-repo-status
 gh aw compile
