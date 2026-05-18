@@ -1,6 +1,19 @@
 
 # GitHub Agentic Workflow
 
+
+## Clean up
+
+delete these 4 files
+
+```
+issue-triage.md
+issue-triage.lock.md
+repo-status.md
+repo-status.lock.md
+```
+
+
 ## Purpose
 
 Main page
