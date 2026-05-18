@@ -22,7 +22,7 @@ https://github.com/qkfang/ghc-demo-mcp-skill/actions/workflows/daily-activity-re
 
 ```
 gh extension remove github/gh-aw
-gh extension install github/gh-aw --pin v0.68.3
+gh extension install github/gh-aw --pin v0.72.1
 gh extension upgrade aw
 
 curl -sL https://raw.githubusercontent.com/github/gh-aw/main/install-gh-aw.sh | bash
