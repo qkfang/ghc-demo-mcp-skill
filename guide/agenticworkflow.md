@@ -31,7 +31,14 @@ gh auth login
 
 ## Demo 2
 Now lets create above AW 
+
 gh aw add-wizard githubnext/agentics/daily-repo-status
+gh aw compile
+
+gh aw status
+gh aw run daily-repo-status
+
+
 
 ## Demo 3
 Now lets create a triage agent.
@@ -48,11 +55,4 @@ https://github.github.com/gh-aw/guides/packaging-imports/
 ```
 
 # Reference
-
-gh aw add-wizard githubnext/agentics/daily-repo-status
-gh aw compile
-
-gh aw status
-gh aw run daily-repo-status
-
 
