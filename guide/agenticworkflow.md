@@ -29,6 +29,12 @@ curl -sL https://raw.githubusercontent.com/github/gh-aw/main/install-gh-aw.sh | 
 gh auth login
 ```
 
+Generate the token in the COPILOT_GITHUB_TOKEN secret : copilot request scope: https://github.com/settings/personal-access-tokens/new
+
+```
+gh aw secrets set COPILOT_GITHUB_TOKEN --repo qkfang/ghc-demo-mcp-skill
+```
+
 ## Demo 2
 Now lets create above AW 
 
