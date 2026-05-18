@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="App.Functions.Tests/App.Functions.Tests.csproj" />
+  <Project Path="App.Functions/App.Functions.csproj" />
+</Solution>

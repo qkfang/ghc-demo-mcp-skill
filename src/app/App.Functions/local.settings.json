@@ -1,0 +1,14 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "APPLICATIONINSIGHTS_CONNECTION_STRING": "",
+    "MovieApi__Pricing__TierOneMaxTickets": "5",
+    "MovieApi__Pricing__TierTwoMaxTickets": "10",
+    "MovieApi__Pricing__TierOnePrice": "100",
+    "MovieApi__Pricing__TierTwoPrice": "90",
+    "MovieApi__Pricing__TierThreePrice": "80",
+    "MovieApi__MoviesJson": "[{\"m_id\":1,\"m_name\":\"Interstellar\",\"m_available\":20},{\"m_id\":2,\"m_name\":\"Inception\",\"m_available\":10},{\"m_id\":3,\"m_name\":\"The Matrix\",\"m_available\":0}]"
+  }
+}
