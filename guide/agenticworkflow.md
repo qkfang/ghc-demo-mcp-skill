@@ -41,6 +41,7 @@ gh aw run repo-status
 
 ## Demo 3
 Now lets create a triage agent.
+
 https://github.com/qkfang/ghc-demo-mcp-skill/actions/workflows/issue-triage.lock.yml
 https://github.com/qkfang/ghc-demo-mcp-skill/issues
 
@@ -48,10 +49,8 @@ https://github.com/qkfang/ghc-demo-mcp-skill/issues
 Initialize this repository for GitHub Agentic Workflows using https://raw.githubusercontent.com/github/gh-aw/main/install.md
 
 Then import and adapt an issue triage workflow from github/gh-aw. Find a suitable issue triage workflow in that repository and adapt it: update the labels, assignee logic, and any repository-specific rules to match this project's conventions.
-
-
-https://github.github.com/gh-aw/guides/packaging-imports/
 ```
 
 # Reference
 
+https://github.github.com/gh-aw/guides/packaging-imports/
