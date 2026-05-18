@@ -68,7 +68,7 @@ https://github.com/qkfang/ghc-demo-mcp-skill/actions/workflows/issue-triage.lock
 ```
 Initialize this repository for GitHub Agentic Workflows using https://raw.githubusercontent.com/github/gh-aw/main/install.md
 
-Then import and adapt an issue triage workflow from github/gh-aw. Find a suitable issue triage workflow in that repository and adapt it: update the labels, assignee logic, and any repository-specific rules to match this project's conventions.
+Then import and adapt an issue ticket triage workflow from github/gh-aw. Find a suitable issue ticket triage workflow in that repository and adapt it: update the labels, assignee logic, and any repository-specific rules to match this project's conventions.
 ```
 
 # Reference
