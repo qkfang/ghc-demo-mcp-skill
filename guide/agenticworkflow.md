@@ -13,12 +13,11 @@ Repo
 https://github.com/qkfang/ghc-demo-mcp-skill/
 
 
-
 ## Demo 1
 Show how the daily-activity-report agent looks like in github
 https://github.com/qkfang/ghc-demo-mcp-skill/actions/workflows/daily-activity-report.lock.yml
 
-## Setup
+## Demo 2
 
 ```
 gh extension remove github/gh-aw
@@ -35,21 +34,23 @@ Generate the token in the COPILOT_GITHUB_TOKEN secret : copilot request scope: h
 gh aw secrets set COPILOT_GITHUB_TOKEN --repo qkfang/ghc-demo-mcp-skill
 ```
 
-## Demo 2
+## Demo 3
 Now lets create above AW 
 
+```
 gh aw add githubnext/agentics/repo-status
 gh aw compile
 gh aw status
 gh aw run repo-status
+```
 
+## Demo 4
 
+Now lets create a triage workflow.
 
-## Demo 3
-Now lets create a triage agent.
-
-https://github.com/qkfang/ghc-demo-mcp-skill/actions/workflows/issue-triage.lock.yml
 https://github.com/qkfang/ghc-demo-mcp-skill/issues
+https://github.com/qkfang/ghc-demo-mcp-skill/actions/workflows/issue-triage.lock.yml
+
 
 ```
 Initialize this repository for GitHub Agentic Workflows using https://raw.githubusercontent.com/github/gh-aw/main/install.md
