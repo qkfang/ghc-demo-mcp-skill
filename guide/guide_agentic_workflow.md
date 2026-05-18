@@ -7,8 +7,8 @@
 delete these 4 files
 
 ```
-issue-triage.md
-issue-triage.lock.md
+issue-triage-agent.md
+issue-triage-agent.lock.md
 repo-status.md
 repo-status.lock.md
 ```
