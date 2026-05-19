@@ -1,0 +1,793 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.42.1.51946",
+      "templateHash": "9807324498842389167"
+    }
+  },
+  "parameters": {
+    "environmentName": {
+      "type": "string",
+      "metadata": {
+        "description": "Deployment environment name (for example: dev, test, prod)."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Azure region for all resources."
+      }
+    },
+    "workloadName": {
+      "type": "string",
+      "defaultValue": "ghcdemo",
+      "metadata": {
+        "description": "Workload name used as the naming prefix."
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "azd-env-name": "[parameters('environmentName')]",
+        "azd-service-name": "api",
+        "managed-by": "bicep"
+      },
+      "metadata": {
+        "description": "Common tags applied to all resources."
+      }
+    },
+    "sqlAdministratorLogin": {
+      "type": "string",
+      "defaultValue": "sqladminuser",
+      "metadata": {
+        "description": "SQL administrator login name."
+      }
+    },
+    "sqlAdministratorPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "SQL administrator password."
+      }
+    },
+    "sqlDatabaseName": {
+      "type": "string",
+      "defaultValue": "appdb",
+      "metadata": {
+        "description": "SQL database name."
+      }
+    }
+  },
+  "variables": {
+    "uniqueSuffix": "[toLower(take(uniqueString(subscription().id, resourceGroup().id, parameters('workloadName'), parameters('environmentName')), 6))]",
+    "baseName": "[toLower(format('{0}-{1}', parameters('workloadName'), parameters('environmentName')))]",
+    "compactBaseName": "[toLower(replace(variables('baseName'), '-', ''))]",
+    "managedIdentityName": "[toLower(take(format('id-{0}-{1}', variables('baseName'), variables('uniqueSuffix')), 128))]",
+    "logAnalyticsWorkspaceName": "[toLower(take(format('log-{0}-{1}', variables('baseName'), variables('uniqueSuffix')), 63))]",
+    "appInsightsName": "[toLower(take(format('appi-{0}-{1}', variables('baseName'), variables('uniqueSuffix')), 64))]",
+    "sqlServerName": "[toLower(take(format('sql-{0}-{1}', variables('compactBaseName'), variables('uniqueSuffix')), 63))]",
+    "keyVaultName": "[toLower(take(format('kv-{0}-{1}', variables('compactBaseName'), variables('uniqueSuffix')), 24))]",
+    "functionAppName": "[toLower(take(format('func-{0}-{1}', variables('baseName'), variables('uniqueSuffix')), 60))]",
+    "functionPlanName": "[toLower(take(format('plan-{0}-{1}', variables('baseName'), variables('uniqueSuffix')), 40))]",
+    "storageAccountName": "[toLower(take(replace(format('st{0}{1}', variables('compactBaseName'), variables('uniqueSuffix')), '-', ''), 24))]",
+    "sqlConnectionSecretName": "sql-connection-string",
+    "storageConnectionSecretName": "azure-webjobs-storage"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/{1}', variables('keyVaultName'), variables('storageConnectionSecretName'))]",
+      "properties": {
+        "value": "[reference(resourceId('Microsoft.Resources/deployments', format('function-{0}', variables('uniqueSuffix'))), '2025-04-01').outputs.storageConnectionString.value]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', format('function-{0}', variables('uniqueSuffix')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "[format('identity-{0}', variables('uniqueSuffix'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[variables('managedIdentityName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "14131766061852597572"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "User-assigned managed identity name."
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Location for the managed identity."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+              "apiVersion": "2023-01-31",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]"
+            }
+          ],
+          "outputs": {
+            "name": {
+              "type": "string",
+              "value": "[parameters('name')]"
+            },
+            "principalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('name')), '2023-01-31').principalId]"
+            },
+            "resourceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('name'))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "[format('monitoring-{0}', variables('uniqueSuffix'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "workspaceName": {
+            "value": "[variables('logAnalyticsWorkspaceName')]"
+          },
+          "appInsightsName": {
+            "value": "[variables('appInsightsName')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "10472783123193983487"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region for monitoring resources."
+              }
+            },
+            "workspaceName": {
+              "type": "string",
+              "metadata": {
+                "description": "Log Analytics workspace name."
+              }
+            },
+            "appInsightsName": {
+              "type": "string",
+              "metadata": {
+                "description": "Application Insights resource name."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2023-09-01",
+              "name": "[parameters('workspaceName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "name": "PerGB2018"
+                },
+                "retentionInDays": 30
+              }
+            },
+            {
+              "type": "Microsoft.Insights/components",
+              "apiVersion": "2020-02-02",
+              "name": "[parameters('appInsightsName')]",
+              "location": "[parameters('location')]",
+              "kind": "web",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "appInsightsName": {
+              "type": "string",
+              "value": "[parameters('appInsightsName')]"
+            },
+            "applicationInsightsConnectionString": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsightsName')), '2020-02-02').ConnectionString]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "[format('sql-{0}', variables('uniqueSuffix'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "serverName": {
+            "value": "[variables('sqlServerName')]"
+          },
+          "databaseName": {
+            "value": "[parameters('sqlDatabaseName')]"
+          },
+          "administratorLogin": {
+            "value": "[parameters('sqlAdministratorLogin')]"
+          },
+          "administratorPassword": {
+            "value": "[parameters('sqlAdministratorPassword')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "7831439569023619665"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region for SQL resources."
+              }
+            },
+            "serverName": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure SQL Server name."
+              }
+            },
+            "databaseName": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure SQL Database name."
+              }
+            },
+            "administratorLogin": {
+              "type": "string",
+              "metadata": {
+                "description": "SQL administrator login."
+              }
+            },
+            "administratorPassword": {
+              "type": "securestring",
+              "metadata": {
+                "description": "SQL administrator password."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Sql/servers",
+              "apiVersion": "2023-08-01-preview",
+              "name": "[parameters('serverName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "administratorLogin": "[parameters('administratorLogin')]",
+                "administratorLoginPassword": "[parameters('administratorPassword')]",
+                "minimalTlsVersion": "1.2",
+                "publicNetworkAccess": "Enabled",
+                "version": "12.0"
+              }
+            },
+            {
+              "type": "Microsoft.Sql/servers/firewallRules",
+              "apiVersion": "2023-08-01-preview",
+              "name": "[format('{0}/{1}', parameters('serverName'), 'AllowAzureServices')]",
+              "properties": {
+                "startIpAddress": "0.0.0.0",
+                "endIpAddress": "0.0.0.0"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', parameters('serverName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Sql/servers/databases",
+              "apiVersion": "2023-08-01-preview",
+              "name": "[format('{0}/{1}', parameters('serverName'), parameters('databaseName'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Basic",
+                "tier": "Basic"
+              },
+              "properties": {
+                "collation": "SQL_Latin1_General_CP1_CI_AS"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', parameters('serverName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "serverName": {
+              "type": "string",
+              "value": "[parameters('serverName')]"
+            },
+            "fullyQualifiedDomainName": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Sql/servers', parameters('serverName')), '2023-08-01-preview').fullyQualifiedDomainName]"
+            },
+            "databaseName": {
+              "type": "string",
+              "value": "[parameters('databaseName')]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "[format('kv-{0}', variables('uniqueSuffix'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "keyVaultName": {
+            "value": "[variables('keyVaultName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "managedIdentityPrincipalId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identity-{0}', variables('uniqueSuffix'))), '2025-04-01').outputs.principalId.value]"
+          },
+          "sqlConnectionSecretName": {
+            "value": "[variables('sqlConnectionSecretName')]"
+          },
+          "sqlConnectionString": {
+            "value": "[format('Server=tcp:{0},1433;Initial Catalog={1};Persist Security Info=False;User ID={2};Password={3};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;', reference(resourceId('Microsoft.Resources/deployments', format('sql-{0}', variables('uniqueSuffix'))), '2025-04-01').outputs.fullyQualifiedDomainName.value, parameters('sqlDatabaseName'), parameters('sqlAdministratorLogin'), parameters('sqlAdministratorPassword'))]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "1387978695520914791"
+            }
+          },
+          "parameters": {
+            "keyVaultName": {
+              "type": "string",
+              "metadata": {
+                "description": "Key Vault name."
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region for the Key Vault."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags."
+              }
+            },
+            "managedIdentityPrincipalId": {
+              "type": "string",
+              "metadata": {
+                "description": "Principal ID for the managed identity that needs secret access."
+              }
+            },
+            "sqlConnectionSecretName": {
+              "type": "string",
+              "defaultValue": "sql-connection-string",
+              "metadata": {
+                "description": "Secret name for SQL connection string."
+              }
+            },
+            "sqlConnectionString": {
+              "type": "securestring",
+              "metadata": {
+                "description": "SQL connection string value."
+              }
+            }
+          },
+          "variables": {
+            "keyVaultSecretsUserRoleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults",
+              "apiVersion": "2023-07-01",
+              "name": "[parameters('keyVaultName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "enableRbacAuthorization": true,
+                "enabledForDeployment": false,
+                "enabledForTemplateDeployment": false,
+                "enabledForDiskEncryption": false,
+                "tenantId": "[tenant().tenantId]",
+                "sku": {
+                  "family": "A",
+                  "name": "standard"
+                },
+                "softDeleteRetentionInDays": 90,
+                "publicNetworkAccess": "Enabled"
+              }
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), parameters('sqlConnectionSecretName'))]",
+              "properties": {
+                "value": "[parameters('sqlConnectionString')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+              "name": "[guid(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), parameters('managedIdentityPrincipalId'), variables('keyVaultSecretsUserRoleDefinitionId'))]",
+              "properties": {
+                "roleDefinitionId": "[variables('keyVaultSecretsUserRoleDefinitionId')]",
+                "principalId": "[parameters('managedIdentityPrincipalId')]",
+                "principalType": "ServicePrincipal"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "keyVaultName": {
+              "type": "string",
+              "value": "[parameters('keyVaultName')]"
+            },
+            "keyVaultUri": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', format('identity-{0}', variables('uniqueSuffix')))]",
+        "[resourceId('Microsoft.Resources/deployments', format('sql-{0}', variables('uniqueSuffix')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "[format('function-{0}', variables('uniqueSuffix'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "functionAppName": {
+            "value": "[variables('functionAppName')]"
+          },
+          "hostingPlanName": {
+            "value": "[variables('functionPlanName')]"
+          },
+          "storageAccountName": {
+            "value": "[variables('storageAccountName')]"
+          },
+          "userAssignedIdentityId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identity-{0}', variables('uniqueSuffix'))), '2025-04-01').outputs.resourceId.value]"
+          },
+          "appInsightsConnectionString": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', format('monitoring-{0}', variables('uniqueSuffix'))), '2025-04-01').outputs.applicationInsightsConnectionString.value]"
+          },
+          "keyVaultUri": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', format('kv-{0}', variables('uniqueSuffix'))), '2025-04-01').outputs.keyVaultUri.value]"
+          },
+          "sqlConnectionSecretName": {
+            "value": "[variables('sqlConnectionSecretName')]"
+          },
+          "storageConnectionSecretName": {
+            "value": "[variables('storageConnectionSecretName')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "4701054767538985419"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region for Function resources."
+              }
+            },
+            "functionAppName": {
+              "type": "string",
+              "metadata": {
+                "description": "Function App name."
+              }
+            },
+            "hostingPlanName": {
+              "type": "string",
+              "metadata": {
+                "description": "App Service plan name."
+              }
+            },
+            "storageAccountName": {
+              "type": "string",
+              "metadata": {
+                "description": "Storage account name used by the Function App."
+              }
+            },
+            "userAssignedIdentityId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the user-assigned managed identity."
+              }
+            },
+            "appInsightsConnectionString": {
+              "type": "string",
+              "metadata": {
+                "description": "Application Insights connection string."
+              }
+            },
+            "keyVaultUri": {
+              "type": "string",
+              "metadata": {
+                "description": "Key Vault URI (for app setting references)."
+              }
+            },
+            "sqlConnectionSecretName": {
+              "type": "string",
+              "metadata": {
+                "description": "Key Vault secret name for SQL connection string."
+              }
+            },
+            "storageConnectionSecretName": {
+              "type": "string",
+              "metadata": {
+                "description": "Key Vault secret name for AzureWebJobsStorage connection string."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2023-05-01",
+              "name": "[parameters('storageAccountName')]",
+              "location": "[parameters('location')]",
+              "kind": "StorageV2",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard_LRS"
+              },
+              "properties": {
+                "allowBlobPublicAccess": false,
+                "minimumTlsVersion": "TLS1_2",
+                "supportsHttpsTrafficOnly": true
+              }
+            },
+            {
+              "type": "Microsoft.Web/serverfarms",
+              "apiVersion": "2023-12-01",
+              "name": "[parameters('hostingPlanName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Y1",
+                "tier": "Dynamic"
+              },
+              "kind": "functionapp",
+              "properties": {
+                "reserved": true
+              }
+            },
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2023-12-01",
+              "name": "[parameters('functionAppName')]",
+              "location": "[parameters('location')]",
+              "kind": "functionapp,linux",
+              "tags": "[parameters('tags')]",
+              "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                  "[format('{0}', parameters('userAssignedIdentityId'))]": {}
+                }
+              },
+              "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]",
+                "httpsOnly": true,
+                "siteConfig": {
+                  "linuxFxVersion": "DOTNET-ISOLATED|10.0",
+                  "minTlsVersion": "1.2",
+                  "ftpsState": "Disabled",
+                  "appSettings": [
+                    {
+                      "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                      "value": "[parameters('appInsightsConnectionString')]"
+                    },
+                    {
+                      "name": "FUNCTIONS_EXTENSION_VERSION",
+                      "value": "~4"
+                    },
+                    {
+                      "name": "FUNCTIONS_WORKER_RUNTIME",
+                      "value": "dotnet-isolated"
+                    },
+                    {
+                      "name": "AzureWebJobsStorage",
+                      "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/{1})', parameters('keyVaultUri'), parameters('storageConnectionSecretName'))]"
+                    },
+                    {
+                      "name": "ConnectionStrings__Default",
+                      "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/{1})', parameters('keyVaultUri'), parameters('sqlConnectionSecretName'))]"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "functionAppName": {
+              "type": "string",
+              "value": "[parameters('functionAppName')]"
+            },
+            "storageConnectionString": {
+              "type": "string",
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2}', parameters('storageAccountName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2023-05-01').keys[0].value, environment().suffixes.storage)]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', format('identity-{0}', variables('uniqueSuffix')))]",
+        "[resourceId('Microsoft.Resources/deployments', format('kv-{0}', variables('uniqueSuffix')))]",
+        "[resourceId('Microsoft.Resources/deployments', format('monitoring-{0}', variables('uniqueSuffix')))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "functionAppResourceName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', format('function-{0}', variables('uniqueSuffix'))), '2025-04-01').outputs.functionAppName.value]"
+    },
+    "keyVaultResourceName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', format('kv-{0}', variables('uniqueSuffix'))), '2025-04-01').outputs.keyVaultName.value]"
+    },
+    "sqlServerResourceName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', format('sql-{0}', variables('uniqueSuffix'))), '2025-04-01').outputs.serverName.value]"
+    },
+    "applicationInsightsResourceName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', format('monitoring-{0}', variables('uniqueSuffix'))), '2025-04-01').outputs.appInsightsName.value]"
+    },
+    "userAssignedManagedIdentityResourceName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identity-{0}', variables('uniqueSuffix'))), '2025-04-01').outputs.name.value]"
+    }
+  }
+}
