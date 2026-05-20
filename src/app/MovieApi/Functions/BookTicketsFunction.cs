@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
+using MovieApi.Models;
 using MovieApi.Repositories;
 
 namespace MovieApi.Functions;
@@ -29,15 +30,12 @@ public sealed class BookTicketsFunction(IMovieRepository movieRepository)
         return booking.Status switch
         {
             BookTicketsStatus.Success => new OkObjectResult(new[] { booking.Order! }),
-            BookTicketsStatus.MovieNotFound => new NotFoundObjectResult(new { message = "Resource not found" }),
+            BookTicketsStatus.MovieNotFound => new NotFoundObjectResult(new MessageResponse("Resource not found")),
             BookTicketsStatus.NotEnoughTickets => new BadRequestObjectResult(
                 new[]
                 {
-                    new
-                    {
-                        error =
-                            $"avaible tickets is only {booking.AvailableTickets} but you have ordered {ticketCount}"
-                    }
+                    new ErrorResponse(
+                        $"avaible tickets is only {booking.AvailableTickets} but you have ordered {ticketCount}")
                 }),
             _ => BadRequest()
         };
@@ -50,5 +48,5 @@ public sealed class BookTicketsFunction(IMovieRepository movieRepository)
         return !string.IsNullOrWhiteSpace(value) && int.TryParse(value, out ticketCount) && ticketCount > 0;
     }
 
-    private static BadRequestObjectResult BadRequest() => new(new { message = "Bad request" });
+    private static BadRequestObjectResult BadRequest() => new(new MessageResponse("Bad request"));
 }

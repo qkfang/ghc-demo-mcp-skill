@@ -16,6 +16,8 @@ public sealed class InMemoryMovieRepository : IMovieRepository
 
     public Task<IReadOnlyList<Movie>> GetAvailableMoviesAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         lock (_syncLock)
         {
             var availableMovies = _movies
@@ -29,6 +31,8 @@ public sealed class InMemoryMovieRepository : IMovieRepository
 
     public Task<BookTicketsResult> BookTicketsAsync(int movieId, int ticketCount, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         lock (_syncLock)
         {
             var movie = _movies.FirstOrDefault(item => item.Id == movieId);

@@ -51,4 +51,27 @@ public sealed class InMemoryMovieRepositoryTests
         Assert.Equal(BookTicketsStatus.MovieNotFound, result.Status);
         Assert.Null(result.Order);
     }
+
+    [Fact]
+    public async Task BookTicketsAsync_DecreasesAvailableTicketsAfterSuccessfulBooking()
+    {
+        var repository = new InMemoryMovieRepository();
+
+        await repository.BookTicketsAsync(movieId: 2, ticketCount: 2, CancellationToken.None);
+        var movies = await repository.GetAvailableMoviesAsync(CancellationToken.None);
+        var movie = Assert.Single(movies, item => item.Id == 2);
+
+        Assert.Equal(10, movie.Available);
+    }
+
+    [Fact]
+    public async Task BookTicketsAsync_ThrowsWhenCancelled()
+    {
+        var repository = new InMemoryMovieRepository();
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => repository.BookTicketsAsync(movieId: 1, ticketCount: 1, cts.Token));
+    }
 }
